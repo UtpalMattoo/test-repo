@@ -1,6 +1,7 @@
 import os
 from typing import Dict, List, Any, Optional
-from flask import Flask, jsonify, Response
+from flask import Flask, jsonify, Response, request
+from sqlalchemy import or_
 from models import init_db, db, Dog, Breed
 
 # Get the server directory path
@@ -15,13 +16,44 @@ init_db(app)
 
 @app.route('/api/dogs', methods=['GET'])
 def get_dogs() -> Response:
+    # Get search parameters
+    search_query: str = request.args.get('search', '').strip()
+    page: int = max(1, int(request.args.get('page', 1)))
+    per_page: int = min(50, int(request.args.get('per_page', 12)))
+    breed_id: Optional[str] = request.args.get('breed_id')
+    available: Optional[str] = request.args.get('available')
+
+    # Build the base query
     query = db.session.query(
         Dog.id, 
         Dog.name, 
-        Breed.name.label('breed')
+        Breed.name.label('breed'),
+        Dog.status
     ).join(Breed, Dog.breed_id == Breed.id)
     
-    dogs_query = query.all()
+    # Apply search filter if search query exists
+    if search_query:
+        query = query.filter(
+            or_(
+                Dog.name.ilike(f'%{search_query}%'),
+                Breed.name.ilike(f'%{search_query}%'),
+                Dog.description.ilike(f'%{search_query}%')
+            )
+        )
+    if breed_id:
+        try:
+            breed_id_int = int(breed_id)
+            query = query.filter(Dog.breed_id == breed_id_int)
+        except ValueError:
+            pass
+    if available == 'true':
+        query = query.filter(Dog.status == 'AVAILABLE')
+    
+    # Add this line before pagination:
+    query = query.order_by(Dog.name)
+    
+    # Apply pagination
+    paginated_dogs = query.paginate(page=page, per_page=per_page)
     
     # Convert the result to a list of dictionaries
     dogs_list: List[Dict[str, Any]] = [
@@ -30,10 +62,15 @@ def get_dogs() -> Response:
             'name': dog.name,
             'breed': dog.breed
         }
-        for dog in dogs_query
+        for dog in paginated_dogs.items
     ]
     
-    return jsonify(dogs_list)
+    return jsonify({
+        'dogs': dogs_list,
+        'total': paginated_dogs.total,
+        'pages': paginated_dogs.pages,
+        'current_page': page
+    })
 
 @app.route('/api/dogs/<int:id>', methods=['GET'])
 def get_dog(id: int) -> tuple[Response, int] | Response:
