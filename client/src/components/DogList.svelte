@@ -105,7 +105,6 @@
 
 <div>
     <div class="mb-6 space-y-4">
-        <h2 class="text-2xl font-medium text-slate-100">Available Dogs</h2>
         <!-- Search input -->
         <div class="relative mb-2">
             <input
