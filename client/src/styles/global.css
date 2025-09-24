@@ -1,1 +1,63 @@
 @import "tailwindcss";
+
+/* Terminal Classic theme - VT100 style */
+.theme-terminal {
+  /* Theme variables */
+  --bg-primary: #000000;
+  --text-primary: #00ff00;
+  --font-family: "Courier New", Courier, monospace;
+  --scan-line-color: rgba(0, 255, 0, 0.03);
+  --transition-duration: 0.3s;
+  
+  /* Base styles - using !important to override Tailwind */
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+  font-family: var(--font-family) !important;
+  
+  /* Scan lines effect */
+  background-image: repeating-linear-gradient(
+    0deg,
+    var(--scan-line-color),
+    var(--scan-line-color) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  
+  /* CRT screen glow */
+  text-shadow: 0 0 2px var(--text-primary);
+  
+  /* Smooth transitions */
+  transition: background-color var(--transition-duration) ease,
+              color var(--transition-duration) ease,
+              text-shadow var(--transition-duration) ease;
+}
+
+/* Terminal theme specific element styles */
+.theme-terminal button,
+.theme-terminal input,
+.theme-terminal select {
+  background: var(--bg-primary);
+  border: 1px solid var(--text-primary);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  transition: all var(--transition-duration) ease;
+}
+
+/* Command prompt style focus states */
+.theme-terminal button:hover,
+.theme-terminal input:focus,
+.theme-terminal select:focus {
+  box-shadow: 0 0 5px var(--text-primary);
+  outline: none;
+}
+
+/* Cursor blink animation */
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.theme-terminal .cursor::after {
+  content: "_";
+  animation: cursor-blink 1s step-end infinite;
+}
