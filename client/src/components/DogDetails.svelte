@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import AdoptionForm from './AdoptionForm.svelte';
     
     interface Dog {
         id: number;
@@ -9,6 +10,7 @@
         description: string;
         gender: string;
         status: 'AVAILABLE' | 'PENDING' | 'ADOPTED';
+        has_application?: boolean;
     };
 
     // Accept either a dog object or a dogId
@@ -87,6 +89,13 @@
             
             <h2 class="text-lg font-semibold text-slate-200 mb-2">About {dogData.name}</h2>
             <p class="text-slate-400">{dogData.description}</p>
+            
+            {#if dogData.status === 'AVAILABLE'}
+                <AdoptionForm 
+                    dogId={dogData.id} 
+                    hasApplication={dogData.has_application || false}
+                />
+            {/if}
         </div>
     </div>
 {:else}

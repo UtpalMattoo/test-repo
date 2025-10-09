@@ -61,3 +61,72 @@
   content: "_";
   animation: cursor-blink 1s step-end infinite;
 }
+
+/* Adoption Form Dark Mode Styling */
+.adoption-form {
+  /* Enhanced dark mode styling for adoption forms */
+  background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+  border: 1px solid #374151;
+  border-radius: 0.75rem;
+  padding: 2rem;
+  margin-top: 1.5rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.adoption-form input {
+  background-color: #111827;
+  border: 1px solid #4B5563;
+  color: #F9FAFB;
+  transition: all 0.2s ease-in-out;
+}
+
+.adoption-form input:focus {
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  background-color: #1F2937;
+}
+
+.adoption-form input::placeholder {
+  color: #9CA3AF;
+}
+
+.adoption-form label {
+  color: #D1D5DB;
+  font-weight: 500;
+}
+
+.adoption-form button {
+  background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.adoption-form button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2563EB 0%, #1E40AF 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
+}
+
+.adoption-form button:disabled {
+  background: #374151;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Success and error message styling */
+.has-application-message,
+.success-message {
+  background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+  border: 1px solid #374151;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.error-message {
+  color: #F87171;
+  font-weight: 500;
+}

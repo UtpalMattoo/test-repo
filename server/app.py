@@ -2,7 +2,8 @@ import os
 from typing import Dict, List, Any, Optional
 from flask import Flask, jsonify, Response, request
 from sqlalchemy import or_
-from models import init_db, db, Dog, Breed
+from models import init_db, db, Dog, Breed, AdoptionApplication
+from utils.validation import validate_email, validate_phone_us, validate_name_length
 
 # Get the server directory path
 base_dir: str = os.path.abspath(os.path.dirname(__file__))
@@ -89,6 +90,9 @@ def get_dog(id: int) -> tuple[Response, int] | Response:
     if not dog_query:
         return jsonify({"error": "Dog not found"}), 404
     
+    # Check if dog has an existing application
+    has_application = AdoptionApplication.query.filter_by(dog_id=id).first() is not None
+    
     # Convert the result to a dictionary
     dog: Dict[str, Any] = {
         'id': dog_query.id,
@@ -97,7 +101,8 @@ def get_dog(id: int) -> tuple[Response, int] | Response:
         'age': dog_query.age,
         'description': dog_query.description,
         'gender': dog_query.gender,
-        'status': dog_query.status.name
+        'status': dog_query.status.name,
+        'has_application': has_application
     }
     
     return jsonify(dog)
@@ -116,6 +121,74 @@ def get_breeds() -> Response:
     ]
     
     return jsonify(breeds_list)  # jsonify returns a Response object
+
+
+@app.route('/api/dogs/<int:dog_id>/applications', methods=['POST'])
+def submit_application(dog_id: int) -> tuple[Response, int]:
+    """Submit adoption application for a dog."""
+    # Check if dog exists
+    dog = Dog.query.get(dog_id)
+    if not dog:
+        return jsonify({"error": "Dog not found"}), 404
+    
+    # Check if dog already has an application
+    existing_application = AdoptionApplication.query.filter_by(dog_id=dog_id).first()
+    if existing_application:
+        return jsonify({"error": "This dog already has an application"}), 400
+    
+    # Get request data
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+    
+    # Validate required fields
+    required_fields = ['applicant_name', 'applicant_email', 'applicant_phone']
+    for field in required_fields:
+        if not data.get(field):
+            return jsonify({"error": f"Missing required field: {field}"}), 400
+    
+    # Validate field lengths and formats using validation utilities
+    if not validate_name_length(data['applicant_name']):
+        return jsonify({"error": "Name must be between 2-50 characters", "field": "applicant_name"}), 400
+    
+    if not validate_email(data['applicant_email']):
+        return jsonify({"error": "Invalid email format", "field": "applicant_email"}), 400
+    
+    if not validate_phone_us(data['applicant_phone']):
+        return jsonify({"error": "Invalid phone number format", "field": "applicant_phone"}), 400
+    
+    # Create new application
+    try:
+        application = AdoptionApplication(
+            dog_id=dog_id,
+            applicant_name=data['applicant_name'],
+            applicant_email=data['applicant_email'],
+            applicant_phone=data['applicant_phone']
+        )
+        
+        db.session.add(application)
+        db.session.commit()
+        
+        return jsonify({
+            "message": "submission accepted",
+            "application_id": application.id
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": "Failed to submit application"}), 500
+
+
+@app.route('/api/applications', methods=['GET'])
+def get_applications() -> Response:
+    """Get all adoption applications for staff review."""
+    applications = AdoptionApplication.query.all()
+    
+    applications_list: List[Dict[str, Any]] = [
+        app.to_dict() for app in applications
+    ]
+    
+    return jsonify(applications_list)
 
 
 # add a new endpoint for the root of flask API

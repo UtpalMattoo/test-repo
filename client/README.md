@@ -1,16 +1,47 @@
-# Astro Starter Kit: Basics
+# Dog Shelter - Frontend
 
-```sh
-npm create astro@latest -- --template basics
+Astro + Svelte frontend for the Tailspin Dog Shelter adoption application.
+
+## New Components
+
+### AdoptionForm.svelte
+
+Interactive form component for submitting dog adoption applications.
+
+**Props:**
+- `dogId: number` - ID of the dog to apply for
+- `hasApplication: boolean` - Whether the dog already has an application
+
+**Features:**
+- Real-time client-side validation (name, email, phone)
+- Loading states during submission
+- Success/error message display
+- Dark mode styling with terminal-inspired design
+- Accessibility support with ARIA labels and test IDs
+
+**Validation Rules:**
+- Name: 2-50 characters required
+- Email: Valid format required (user@domain.com)
+- Phone: US format required (555) 123-4567, 555-123-4567, or 5551234567
+
+**Usage:**
+```svelte
+<AdoptionForm dogId={1} hasApplication={false} />
 ```
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/astro/tree/latest/examples/basics)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/astro/tree/latest/examples/basics)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/withastro/astro?devcontainer_path=.devcontainer/basics/devcontainer.json)
+### DogDetails.svelte (Updated)
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+Enhanced dog detail component that now includes the adoption form for available dogs.
 
-![just-the-basics](https://github.com/withastro/astro/assets/2244813/a0a5533c-a856-4198-8470-2d67b1d7c554)
+**New Features:**
+- Integrates AdoptionForm component for available dogs
+- Displays adoption form only when dog status is 'AVAILABLE'
+- Shows "has application" message when dog already has an application
+- Passes dog ID and application status to form component
+
+**Props:** (unchanged)
+- `dog: Dog | undefined` - Dog object to display
+- `dogId: number` - ID of dog to fetch and display
 
 ## 🚀 Project Structure
 

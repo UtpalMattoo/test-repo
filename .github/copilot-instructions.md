@@ -1,4 +1,4 @@
-# Dog shelter
+﻿# Dog shelter
 
 This is an application to allow people to look for dogs to adopt. It is built in a monorepo, with a Flask-based backend and Astro-based frontend.
 
