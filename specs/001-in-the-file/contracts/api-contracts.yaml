@@ -1,0 +1,212 @@
+openapi: 3.0.3
+info:
+  title: Dog Adoption Application API
+  description: API endpoints for dog adoption application form
+  version: 1.0.0
+  
+paths:
+  /api/dogs/{dog_id}/applications:
+    post:
+      summary: Submit adoption application for a dog
+      description: Submit adoption interest form for an available dog
+      parameters:
+        - name: dog_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID of the dog to apply for
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - applicant_name
+                - applicant_email
+                - applicant_phone
+              properties:
+                applicant_name:
+                  type: string
+                  maxLength: 50
+                  minLength: 2
+                  description: Name of the applicant
+                  example: "John Doe"
+                applicant_email:
+                  type: string
+                  format: email
+                  maxLength: 320
+                  description: Email address of the applicant
+                  example: "john.doe@example.com"
+                applicant_phone:
+                  type: string
+                  pattern: '^(\d{10}|(\d{3}[-.]?\d{3}[-.]?\d{4})|(\(\d{3}\)\s?\d{3}[-.]?\d{4}))$'
+                  description: US phone number in various formats
+                  example: "(555) 123-4567"
+      responses:
+        '201':
+          description: Application submitted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "submission accepted"
+                  application_id:
+                    type: integer
+                    description: ID of the created application
+                    example: 42
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Invalid email format"
+                  field:
+                    type: string
+                    example: "applicant_email"
+        '404':
+          description: Dog not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Dog not found"
+        '409':
+          description: Dog already has an application or is not available
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Dog already has an application"
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Internal server error"
+
+  /api/applications:
+    get:
+      summary: Get all adoption applications (staff view)
+      description: Retrieve all adoption applications for staff review (read-only)
+      responses:
+        '200':
+          description: List of applications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      description: Application ID
+                      example: 42
+                    dog_id:
+                      type: integer
+                      description: ID of the dog
+                      example: 15
+                    dog_name:
+                      type: string
+                      description: Name of the dog
+                      example: "Buddy"
+                    dog_breed:
+                      type: string
+                      description: Breed of the dog
+                      example: "Golden Retriever"
+                    applicant_name:
+                      type: string
+                      description: Name of the applicant
+                      example: "John Doe"
+                    applicant_email:
+                      type: string
+                      description: Email of the applicant
+                      example: "john.doe@example.com"
+                    applicant_phone:
+                      type: string
+                      description: Phone of the applicant
+                      example: "(555) 123-4567"
+                    submission_timestamp:
+                      type: string
+                      format: date-time
+                      description: When the application was submitted
+                      example: "2025-10-09T14:30:00Z"
+                    application_status:
+                      type: string
+                      description: Status of the application
+                      example: "PENDING"
+
+  /api/dogs/{dog_id}:
+    get:
+      summary: Get dog details (existing endpoint - may need updates)
+      description: Get dog details including application status for form display logic
+      parameters:
+        - name: dog_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID of the dog
+      responses:
+        '200':
+          description: Dog details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 15
+                  name:
+                    type: string
+                    example: "Buddy"
+                  breed:
+                    type: string
+                    example: "Golden Retriever"
+                  age:
+                    type: integer
+                    example: 3
+                  gender:
+                    type: string
+                    example: "Male"
+                  description:
+                    type: string
+                    example: "Friendly and energetic dog"
+                  status:
+                    type: string
+                    enum: ["AVAILABLE", "PENDING", "ADOPTED"]
+                    example: "AVAILABLE"
+                  has_application:
+                    type: boolean
+                    description: Whether this dog already has an application
+                    example: false
+        '404':
+          description: Dog not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Dog not found"

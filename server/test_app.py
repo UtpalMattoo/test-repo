@@ -99,6 +99,64 @@ class TestApp(unittest.TestCase):
         self.assertEqual(len(data['dogs']), 1)
         self.assertEqual(set(data['dogs'][0].keys()), {'id', 'name', 'breed'})
 
+    @patch('app.db.session')
+    @patch('app.AdoptionApplication')  
+    @patch('app.Dog')
+    def test_get_dog_with_has_application_field(self, mock_dog, mock_application, mock_session):
+        """Test GET /api/dogs/{id} includes has_application field."""
+        # Mock dog exists
+        mock_dog_instance = MagicMock()
+        mock_dog_instance.id = 1
+        mock_dog_instance.name = "Buddy"
+        mock_dog_instance.breed = "Labrador"
+        mock_dog_instance.status = "available"
+        mock_dog_instance.to_dict.return_value = {
+            'id': 1,
+            'name': 'Buddy', 
+            'breed': 'Labrador',
+            'status': 'available'
+        }
+        mock_dog.query.get.return_value = mock_dog_instance
+        
+        # Mock no existing application
+        mock_application.query.filter_by.return_value.first.return_value = None
+        
+        response = self.app.get('/api/dogs/1')
+        
+        # This test should FAIL initially (has_application field doesn't exist yet)
+        self.assertEqual(response.status_code, 200)
+        response_data = json.loads(response.data)
+        self.assertIn('has_application', response_data)
+        self.assertEqual(response_data['has_application'], False)
+        
+    @patch('app.db.session')
+    @patch('app.AdoptionApplication')
+    @patch('app.Dog') 
+    def test_get_dog_with_existing_application(self, mock_dog, mock_application, mock_session):
+        """Test GET /api/dogs/{id} when dog has existing application."""
+        # Mock dog exists
+        mock_dog_instance = MagicMock()
+        mock_dog_instance.id = 1
+        mock_dog_instance.to_dict.return_value = {
+            'id': 1,
+            'name': 'Buddy',
+            'breed': 'Labrador',
+            'status': 'available'
+        }
+        mock_dog.query.get.return_value = mock_dog_instance
+        
+        # Mock existing application
+        mock_existing_app = MagicMock()
+        mock_application.query.filter_by.return_value.first.return_value = mock_existing_app
+        
+        response = self.app.get('/api/dogs/1')
+        
+        # This test should FAIL initially (has_application field doesn't exist yet)
+        self.assertEqual(response.status_code, 200)
+        response_data = json.loads(response.data)
+        self.assertIn('has_application', response_data)
+        self.assertEqual(response_data['has_application'], True)
+
 
 if __name__ == '__main__':
     unittest.main()

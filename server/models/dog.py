@@ -25,6 +25,9 @@ class Dog(BaseModel):
     intake_date = db.Column(db.DateTime, default=datetime.now)
     adoption_date = db.Column(db.DateTime, nullable=True)
     
+    # Relationship to adoption applications
+    applications = relationship("AdoptionApplication", back_populates="dog")
+    
     @validates('name')
     def validate_name(self, key, name):
         return self.validate_string_length('Dog name', name, min_length=2)
