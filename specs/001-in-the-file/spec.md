@@ -57,11 +57,29 @@ A person browsing the dog shelter website finds a dog they're interested in adop
 5. **Given** a user tries to apply for a dog that already has an application, **When** they view the dog details, **Then** the form is not displayed and they see a message indicating the dog already has an application
 6. **Given** a successful form submission, **When** the application is processed, **Then** the application data is permanently stored in the applications table
 
-### Edge Cases
-- What happens when form submission fails due to network issues?
-- How does the system handle extremely long names or phone numbers?
-- What if the same person tries to apply for the same dog multiple times?
-- How are system errors during database storage handled?
+### Edge Cases & Error Scenarios (Discovered During Implementation)
+
+#### Network & System Failures
+- **Given** user submits form and network request fails, **When** network error occurs, **Then** system displays "Network error. Please try again." and keeps form data intact
+- **Given** user submits form and server returns 500 error, **When** server error occurs, **Then** system displays server error message and allows form resubmission
+- **Given** user submits form during server maintenance, **When** server is unavailable, **Then** system handles timeout gracefully with retry option
+
+#### Input Validation Edge Cases
+- **Given** user enters name with only whitespace characters, **When** form is submitted, **Then** system shows "Name is required" error after trimming whitespace
+- **Given** user enters extremely long email (over 320 characters), **When** form is validated, **Then** system shows appropriate length validation error
+- **Given** user enters phone number with unusual formatting (extensions, international codes), **When** form is validated, **Then** system shows "Invalid phone number" for non-US formats
+- **Given** user enters name with exactly 50 characters, **When** form is submitted, **Then** system accepts the input as valid
+- **Given** user enters name with 51 characters, **When** form is validated, **Then** system shows "Name must be 50 characters or less" error
+
+#### Application State Edge Cases
+- **Given** two users simultaneously attempt to apply for the same dog, **When** both submit forms, **Then** first submission succeeds, second receives "already has an application" error
+- **Given** user applies for dog then immediately navigates back to same dog page, **When** page loads, **Then** system shows "Has an application" message instead of form
+- **Given** dog status changes from available to adopted while user fills form, **When** user submits, **Then** system handles status change appropriately
+
+#### Browser & Session Edge Cases
+- **Given** user fills form then loses internet connection, **When** connection is restored and form submitted, **Then** system processes submission normally or shows appropriate error
+- **Given** user fills form then browser tab is closed accidentally, **When** user returns to page, **Then** form is reset (no data persistence expected)
+- **Given** user submits form multiple times by clicking rapidly, **When** button is clicked multiple times, **Then** only one submission is processed due to button disable during processing
 
 ## Requirements
 
@@ -82,11 +100,85 @@ A person browsing the dog shelter website finds a dog they're interested in adop
 - **FR-011**: System MUST allow only one application per dog (prevent duplicate applications for the same dog)
 - **FR-012**: System MUST hide the adoption form and display "Has an application" message when a dog already has an application
 
+### Additional Requirements (Discovered During Implementation)
+
+#### Form Validation & User Input
+- **FR-013**: System MUST validate email addresses using RFC-compliant format (user@domain.extension pattern)
+- **FR-014**: System MUST validate phone numbers to accept US format with flexible formatting: (555) 123-4567, 555-123-4567, 555.123.4567, or 5551234567
+- **FR-015**: System MUST enforce name field minimum length of 2 characters and maximum length of 50 characters
+- **FR-016**: System MUST provide specific validation error messages ("Name must be 50 characters or less", "Invalid email format", "Invalid phone number")
+- **FR-017**: System MUST trim whitespace from form inputs and reject whitespace-only entries
+
+#### Form State Management & User Experience  
+- **FR-018**: System MUST display loading spinner and disable submit button during form processing to prevent duplicate submissions
+- **FR-019**: System MUST show success message "submission accepted" after successful application submission
+- **FR-020**: System MUST hide the adoption form after successful submission and show only success message
+- **FR-021**: System MUST handle network errors gracefully with message "Network error. Please try again."
+- **FR-022**: System MUST handle server errors by displaying the specific error message returned from the server
+- **FR-023**: System MUST reset form fields after successful submission
+- **FR-024**: System MUST maintain form data during validation failures (don't clear valid fields)
+
+#### Data Integrity & Backend Behavior
+- **FR-025**: System MUST implement database unique constraint on dog_id in applications table to prevent duplicate applications
+- **FR-026**: System MUST include has_application boolean field in dog detail API responses
+- **FR-027**: System MUST return HTTP 400 error with specific error message when attempting to apply for dog with existing application
+- **FR-028**: System MUST return HTTP 404 error when attempting to apply for non-existent dog
+- **FR-029**: System MUST store application timestamp automatically when application is created
+- **FR-030**: System MUST set application status to "PENDING" by default for new applications
+
+#### Accessibility & Interface Requirements
+- **FR-031**: System MUST provide data-testid attributes on all form elements for automated testing
+- **FR-032**: System MUST provide ARIA labels for form accessibility compliance
+- **FR-033**: System MUST implement dark mode styling consistent with existing site design
+- **FR-034**: System MUST provide focus states for all interactive form elements
+- **FR-035**: System MUST display form labels clearly associated with their input fields
+
+#### Staff Interface Requirements
+- **FR-036**: System MUST provide API endpoint to retrieve all adoption applications for staff review
+- **FR-037**: System MUST return application data including applicant name, email, phone, submission timestamp, and associated dog information
+- **FR-038**: System MUST order applications by submission timestamp (newest first) in staff view
+
 ### Key Entities
 
 - **Adoption Application**: Represents an adoption interest submission containing applicant contact information (name, email, phone number), associated dog ID, submission timestamp, and application status. Stored permanently in applications table.
 - **Dog**: Existing entity that needs relationship to adoption applications, must have availability status and application count to determine form visibility
 - **Applicant**: Person interested in adopting, identified by contact information provided in the form, with one application allowed per dog
+
+---
+
+## Testing Requirements (Discovered During Implementation)
+
+### Unit Testing Requirements
+- **TR-001**: MUST test email validation function with valid formats (user@domain.com, test.email@domain.co.uk, user+tag@example.org)
+- **TR-002**: MUST test email validation function with invalid formats (missing @, missing domain, spaces, empty string)
+- **TR-003**: MUST test phone validation function with valid US formats ((555) 123-4567, 555-123-4567, 555.123.4567, 5551234567)
+- **TR-004**: MUST test phone validation function with invalid formats (too short, too long, non-numeric, international format)
+- **TR-005**: MUST test name validation with boundary conditions (2 chars minimum, 50 chars maximum, whitespace handling)
+- **TR-006**: MUST test AdoptionApplication model validation and data serialization methods
+
+### API Contract Testing Requirements
+- **TR-007**: MUST test POST /api/dogs/{id}/applications endpoint with valid application data returns 201 and application ID
+- **TR-008**: MUST test POST /api/dogs/{id}/applications endpoint with duplicate application returns 400 error
+- **TR-009**: MUST test POST /api/dogs/{id}/applications endpoint with invalid data returns 400 with field-specific errors
+- **TR-010**: MUST test POST /api/dogs/{id}/applications endpoint with non-existent dog ID returns 404
+- **TR-011**: MUST test GET /api/applications endpoint returns all applications in correct format
+- **TR-012**: MUST test GET /api/dogs/{id} endpoint includes has_application field correctly
+
+### Integration Testing Requirements  
+- **TR-013**: MUST test successful form submission flow from frontend form to database storage
+- **TR-014**: MUST test form validation error display for all validation rules
+- **TR-015**: MUST test form loading states during submission process
+- **TR-016**: MUST test form behavior when dog already has application (form hidden, message shown)
+- **TR-017**: MUST test network error handling in form submission
+- **TR-018**: MUST test server error response handling in form submission
+
+### End-to-End Testing Requirements
+- **TR-019**: MUST test complete user workflow from dog browsing to successful application submission
+- **TR-020**: MUST test complete user workflow with validation errors and correction
+- **TR-021**: MUST test staff applications view showing submitted applications
+- **TR-022**: MUST test accessibility compliance with screen readers and keyboard navigation
+- **TR-023**: MUST test form behavior across different browsers and screen sizes
+- **TR-024**: MUST test edge cases (long inputs, network failures, rapid clicking)
 
 ---
 
@@ -104,6 +196,67 @@ A person browsing the dog shelter website finds a dog they're interested in adop
 - [x] Success criteria are measurable
 - [x] Scope is clearly bounded
 - [x] Dependencies and assumptions identified
+- [x] Validation rules explicitly specified (email, phone, name formats)
+- [x] Error scenarios comprehensively covered
+- [x] Form state management requirements defined
+- [x] API contract requirements specified
+- [x] Testing requirements at all levels documented
+- [x] Accessibility requirements included
+- [x] Edge cases and failure scenarios addressed
+
+---
+
+## Implementation Discoveries: What Was Missing from Original Spec
+
+### Requirements That Emerged During Implementation
+**Original spec said**: "form to provide a name, email and phone number"
+**Discovered**: Specific validation rules were undefined and had to be clarified:
+- Phone number format (US vs international) - **NOT specified originally**
+- Field length limits (name 50 chars, phone 10 digits) - **NOT specified originally**
+- Email validation requirements (basic @ check vs RFC compliance) - **NOT specified originally**
+
+**Original spec said**: "error UI error handling"  
+**Discovered**: Specific error handling scenarios were undefined:
+- Loading states during form submission - **NOT specified originally**
+- Network error handling - **NOT specified originally**
+- Server error response handling - **NOT specified originally**
+- Form field validation messages - **NOT specified originally**
+
+**Original spec said**: "one application per dog"
+**Discovered**: User messaging for this constraint was undefined:
+- What message to show when dog already has application - **NOT specified originally**
+- Whether to hide the form or show disabled state - **NOT specified originally**
+
+### Technical Discoveries During Implementation
+**Original spec assumed**: Basic form submission
+**Reality discovered**: 
+- Need for `has_application` field in Dog API response - **NOT in original spec**
+- Database unique constraint required for data integrity - **NOT in original spec**
+- Form component state management complexity - **NOT in original spec**
+- Integration between DogDetails and AdoptionForm components - **NOT in original spec**
+
+### User Experience Gaps Found
+**Original spec focused on**: Happy path form submission
+**Implementation revealed**:
+- Success message content ("submission accepted") - **NOT specified originally**
+- Form behavior after successful submission - **NOT specified originally**
+- Accessibility requirements (test IDs, ARIA labels) - **NOT specified originally**
+- Dark mode form styling requirements - **NOT specified originally**
+
+### Testing Scope Expansion
+**Original spec mentioned**: "test cases for a valid email address"
+**Implementation required**:
+- Edge case testing (network failures, long inputs) - **NOT specified originally**
+- Integration testing between frontend/backend - **NOT specified originally**
+- Model validation testing - **NOT specified originally**
+- E2E user workflow testing - **NOT specified originally**
+
+### Process Insights: What Would Improve Future Specs
+1. **Clarification Questions**: The 5 clarification questions revealed critical gaps that would have caused implementation delays
+2. **Error Scenario Planning**: Original spec focused on success path, implementation needed comprehensive error handling
+3. **UI State Requirements**: Form states (loading, success, error) need explicit specification upfront
+4. **Integration Points**: How components interact wasn't specified, leading to design decisions during implementation
+5. **Validation Rules**: Specific validation criteria need definition before implementation, not discovery during coding
 
 ---
 
@@ -116,5 +269,7 @@ A person browsing the dog shelter website finds a dog they're interested in adop
 - [x] Requirements generated
 - [x] Entities identified
 - [x] Review checklist passed
+- [x] Implementation completed (30/30 tasks)
+- [x] Learnings encoded for future reference
 
 ---
