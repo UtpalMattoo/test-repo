@@ -1,7 +1,13 @@
 import unittest
 from unittest.mock import patch, MagicMock
 import json
-from app import app  # Changed from relative import to absolute import
+import sys
+import os
+
+# Add the server directory to the path so we can import app
+sys.path.insert(0, os.path.dirname(__file__))
+
+from app import app
 
 # filepath: server/test_app.py
 class TestApp(unittest.TestCase):
@@ -101,29 +107,32 @@ class TestApp(unittest.TestCase):
 
     @patch('app.db.session')
     @patch('app.AdoptionApplication')  
-    @patch('app.Dog')
-    def test_get_dog_with_has_application_field(self, mock_dog, mock_application, mock_session):
+    def test_get_dog_with_has_application_field(self, mock_application, mock_session):
         """Test GET /api/dogs/{id} includes has_application field."""
-        # Mock dog exists
-        mock_dog_instance = MagicMock()
-        mock_dog_instance.id = 1
-        mock_dog_instance.name = "Buddy"
-        mock_dog_instance.breed = "Labrador"
-        mock_dog_instance.status = "available"
-        mock_dog_instance.to_dict.return_value = {
-            'id': 1,
-            'name': 'Buddy', 
-            'breed': 'Labrador',
-            'status': 'available'
-        }
-        mock_dog.query.get.return_value = mock_dog_instance
+        # Mock the database query chain for getting dog details
+        mock_query = MagicMock()
+        mock_session.query.return_value = mock_query
+        mock_query.join.return_value = mock_query
+        mock_query.filter.return_value = mock_query
+        
+        # Create a mock result that mimics the actual query result
+        mock_dog_result = MagicMock()
+        mock_dog_result.id = 1
+        mock_dog_result.name = "Buddy"
+        mock_dog_result.breed = "Labrador" 
+        mock_dog_result.age = 3
+        mock_dog_result.description = "Friendly dog"
+        mock_dog_result.gender = "Male"
+        mock_dog_result.status.name = "AVAILABLE"
+        
+        mock_query.first.return_value = mock_dog_result
         
         # Mock no existing application
         mock_application.query.filter_by.return_value.first.return_value = None
         
         response = self.app.get('/api/dogs/1')
         
-        # This test should FAIL initially (has_application field doesn't exist yet)
+        # This test should PASS now that the endpoint is implemented
         self.assertEqual(response.status_code, 200)
         response_data = json.loads(response.data)
         self.assertIn('has_application', response_data)
@@ -131,19 +140,25 @@ class TestApp(unittest.TestCase):
         
     @patch('app.db.session')
     @patch('app.AdoptionApplication')
-    @patch('app.Dog') 
-    def test_get_dog_with_existing_application(self, mock_dog, mock_application, mock_session):
+    def test_get_dog_with_existing_application(self, mock_application, mock_session):
         """Test GET /api/dogs/{id} when dog has existing application."""
-        # Mock dog exists
-        mock_dog_instance = MagicMock()
-        mock_dog_instance.id = 1
-        mock_dog_instance.to_dict.return_value = {
-            'id': 1,
-            'name': 'Buddy',
-            'breed': 'Labrador',
-            'status': 'available'
-        }
-        mock_dog.query.get.return_value = mock_dog_instance
+        # Mock the database query chain for getting dog details
+        mock_query = MagicMock()
+        mock_session.query.return_value = mock_query
+        mock_query.join.return_value = mock_query
+        mock_query.filter.return_value = mock_query
+        
+        # Create a mock result that mimics the actual query result
+        mock_dog_result = MagicMock()
+        mock_dog_result.id = 1
+        mock_dog_result.name = "Buddy"
+        mock_dog_result.breed = "Labrador"
+        mock_dog_result.age = 3
+        mock_dog_result.description = "Friendly dog"
+        mock_dog_result.gender = "Male"
+        mock_dog_result.status.name = "AVAILABLE"
+        
+        mock_query.first.return_value = mock_dog_result
         
         # Mock existing application
         mock_existing_app = MagicMock()
@@ -151,7 +166,7 @@ class TestApp(unittest.TestCase):
         
         response = self.app.get('/api/dogs/1')
         
-        # This test should FAIL initially (has_application field doesn't exist yet)
+        # This test should PASS now that the endpoint is implemented
         self.assertEqual(response.status_code, 200)
         response_data = json.loads(response.data)
         self.assertIn('has_application', response_data)

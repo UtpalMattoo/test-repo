@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from . import db
@@ -14,11 +14,20 @@ class AdoptionApplication(db.Model):
     applicant_name = Column(String(50), nullable=False)
     applicant_email = Column(String(320), nullable=False)
     applicant_phone = Column(String(15), nullable=False)
-    submission_timestamp = Column(DateTime, nullable=False, default=datetime.utcnow)
+    submission_timestamp = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     application_status = Column(String(20), nullable=False, default='PENDING')
     
     # Relationship to Dog model
     dog = relationship("Dog", back_populates="applications")
+    
+    def __init__(self, **kwargs):
+        """Initialize AdoptionApplication with default values."""
+        super().__init__(**kwargs)
+        # Set default values if not provided
+        if not hasattr(self, 'application_status') or self.application_status is None:
+            self.application_status = 'PENDING'
+        if not hasattr(self, 'submission_timestamp') or self.submission_timestamp is None:
+            self.submission_timestamp = datetime.now(timezone.utc)
     
     def __repr__(self) -> str:
         return f'<AdoptionApplication {self.id} for Dog {self.dog_id}>'

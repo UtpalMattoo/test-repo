@@ -2,8 +2,8 @@ import unittest
 import sys
 import os
 
-# Add the server directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+# Add the server directory to the path so we can import modules
+sys.path.insert(0, os.path.dirname(__file__))
 
 from utils.validation import validate_email, validate_phone_us, validate_name_length
 

@@ -52,6 +52,10 @@ jobs:
       # Step 4: Run the test suite using unittest
       - name: Run tests
         run: |
+          # Run all server tests using Python's unittest module
+          python -m unittest -v server/test_app.py
+          python -m unittest -v server/test_adoption_applications.py
+          python -m unittest -v server/test_validation.py
 
 # =====================
 # PROMPT USED TO GENERATE THIS WORKFLOW
