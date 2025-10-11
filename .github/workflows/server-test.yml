@@ -52,6 +52,7 @@ jobs:
       # Step 4: Run the test suite using unittest
       - name: Run tests
         run: |
+          python -m unittest -v server/test_app.py  # Run all tests in server/test_app.py with verbose output
 
 # =====================
 # PROMPT USED TO GENERATE THIS WORKFLOW
