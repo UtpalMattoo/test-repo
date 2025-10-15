@@ -103,7 +103,7 @@ class TestApp(unittest.TestCase):
         data = json.loads(response.data)
         self.assertTrue(isinstance(data['dogs'], list))
         self.assertEqual(len(data['dogs']), 1)
-        self.assertEqual(set(data['dogs'][0].keys()), {'id', 'name', 'breed'})
+        self.assertEqual(set(data['dogs'][0].keys()), {'id', 'name', 'breed', 'status'})
 
     @patch('app.db.session')
     @patch('app.AdoptionApplication')  
@@ -123,7 +123,10 @@ class TestApp(unittest.TestCase):
         mock_dog_result.age = 3
         mock_dog_result.description = "Friendly dog"
         mock_dog_result.gender = "Male"
-        mock_dog_result.status.name = "AVAILABLE"
+        # Create a proper mock status that behaves like an enum
+        mock_status = MagicMock()
+        mock_status.name = "AVAILABLE"
+        mock_dog_result.status = mock_status
         
         mock_query.first.return_value = mock_dog_result
         
@@ -156,7 +159,10 @@ class TestApp(unittest.TestCase):
         mock_dog_result.age = 3
         mock_dog_result.description = "Friendly dog"
         mock_dog_result.gender = "Male"
-        mock_dog_result.status.name = "AVAILABLE"
+        # Create a proper mock status that behaves like an enum
+        mock_status = MagicMock()
+        mock_status.name = "AVAILABLE"
+        mock_dog_result.status = mock_status
         
         mock_query.first.return_value = mock_dog_result
         

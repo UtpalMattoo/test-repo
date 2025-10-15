@@ -55,5 +55,5 @@ class Dog(BaseModel):
             'age': self.age,
             'gender': self.gender,
             'description': self.description,
-            'status': self.status.name if self.status else 'UNKNOWN'
+            'status': self.status.name if self.status and hasattr(self.status, 'name') else str(self.status) if self.status else 'UNKNOWN'
         }

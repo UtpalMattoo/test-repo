@@ -72,7 +72,7 @@ def get_dogs() -> Response:
             'id': dog.id,
             'name': dog.name,
             'breed': dog.breed,
-            'status': dog.status.name
+            'status': dog.status.name if hasattr(dog.status, 'name') else str(dog.status)
         }
         for dog in paginated_dogs.items
     ]
@@ -112,7 +112,7 @@ def get_dog(id: int) -> tuple[Response, int] | Response:
         'age': dog_query.age,
         'description': dog_query.description,
         'gender': dog_query.gender,
-        'status': dog_query.status.name,
+        'status': dog_query.status.name if hasattr(dog_query.status, 'name') else str(dog_query.status),
         'has_application': has_application
     }
     
@@ -223,7 +223,7 @@ def get_unavailable_dogs() -> Response:
             'id': dog.id,
             'name': dog.name,
             'breed': dog.breed,
-            'status': dog.status.name
+            'status': dog.status.name if hasattr(dog.status, 'name') else str(dog.status)
         }
         for dog in unavailable_dogs
     ]
