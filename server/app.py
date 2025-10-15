@@ -23,6 +23,7 @@ def get_dogs() -> Response:
     per_page: int = min(50, int(request.args.get('per_page', 12)))
     breed_id: Optional[str] = request.args.get('breed_id')
     available: Optional[str] = request.args.get('available')
+    unavailable: Optional[str] = request.args.get('unavailable')
     
     # Build the base query
     query = db.session.query(
@@ -47,8 +48,17 @@ def get_dogs() -> Response:
             query = query.filter(Dog.breed_id == breed_id_int)
         except ValueError:
             pass
-    if available == 'true':
+    # Apply availability filtering with combined logic
+    if available == 'true' and unavailable == 'true':
+        # Both checked - show all dogs (no status filter)
+        pass
+    elif available == 'true' and unavailable != 'true':
+        # Available only (existing behavior)
         query = query.filter(Dog.status == 'AVAILABLE')
+    elif unavailable == 'true' and available != 'true':
+        # Unavailable only (new functionality)
+        query = query.filter(Dog.status != 'AVAILABLE')
+    # else: neither checked - show all dogs (default behavior)
     
     # Add this line before pagination:
     query = query.order_by(Dog.name)
@@ -61,7 +71,8 @@ def get_dogs() -> Response:
         {
             'id': dog.id,
             'name': dog.name,
-            'breed': dog.breed
+            'breed': dog.breed,
+            'status': dog.status.name
         }
         for dog in paginated_dogs.items
     ]

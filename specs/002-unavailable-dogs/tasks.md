@@ -28,27 +28,27 @@
 - **Testing**: `server/test_*.py` (backend tests), `client/e2e-tests/` (frontend E2E)
 
 ## Phase 3.1: Setup
-- [ ] T001 Verify existing project dependencies (Flask, SQLAlchemy, Astro, Svelte, Playwright)
-- [ ] T002 [P] Review existing test infrastructure in server/test_app.py
-- [ ] T003 [P] Verify existing DogList component state in client/src/components/DogList.svelte
+- [x] T001 Verify existing project dependencies (Flask, SQLAlchemy, Astro, Svelte, Playwright)
+- [x] T002 [P] Review existing test infrastructure in server/test_app.py
+- [x] T003 [P] Verify existing DogList component state in client/src/components/DogList.svelte
 
 ## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
 
 **CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
-- [ ] T004 [P] Contract test GET /api/dogs with unavailable parameter in server/test_app.py
-- [ ] T005 [P] Contract test GET /api/dogs with combined filters in server/test_app.py  
-- [ ] T006 [P] Contract test GET /api/dogs status field inclusion in server/test_app.py
-- [ ] T007 [P] Integration test unavailable checkbox interaction in client/e2e-tests/unavailable-dogs.spec.ts
-- [ ] T008 [P] Integration test status badge display in client/e2e-tests/unavailable-dogs.spec.ts
-- [ ] T009 [P] Integration test localStorage persistence in client/e2e-tests/unavailable-dogs.spec.ts
+- [x] T004 [P] Contract test GET /api/dogs with unavailable parameter in server/test_app.py
+- [x] T005 [P] Contract test GET /api/dogs with combined filters in server/test_app.py  
+- [x] T006 [P] Contract test GET /api/dogs status field inclusion in server/test_app.py
+- [x] T007 [P] Integration test unavailable checkbox interaction in client/e2e-tests/unavailable-dogs.spec.ts
+- [x] T008 [P] Integration test status badge display in client/e2e-tests/unavailable-dogs.spec.ts
+- [x] T009 [P] Integration test localStorage persistence in client/e2e-tests/unavailable-dogs.spec.ts
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
 
 ### Backend Enhancement
-- [ ] T010 Add unavailable parameter extraction in server/app.py get_dogs() function
-- [ ] T011 Implement combined filter logic in server/app.py get_dogs() function  
-- [ ] T012 Add status field to API response in server/app.py get_dogs() function
-- [ ] T013 Add type hints for new unavailable parameter in server/app.py
+- [x] T010 Add unavailable parameter extraction in server/app.py get_dogs() function
+- [x] T011 Implement combined filter logic in server/app.py get_dogs() function  
+- [x] T012 Add status field to API response in server/app.py get_dogs() function
+- [x] T013 Add type hints for new unavailable parameter in server/app.py
 
 ### Frontend Enhancement  
 - [ ] T014 [P] Add showUnavailable state variable in client/src/components/DogList.svelte
