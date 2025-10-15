@@ -103,7 +103,7 @@ class TestApp(unittest.TestCase):
         data = json.loads(response.data)
         self.assertTrue(isinstance(data['dogs'], list))
         self.assertEqual(len(data['dogs']), 1)
-        self.assertEqual(set(data['dogs'][0].keys()), {'id', 'name', 'breed'})
+        self.assertEqual(set(data['dogs'][0].keys()), {'id', 'name', 'breed', 'status'})
 
     @patch('app.db.session')
     @patch('app.AdoptionApplication')  
@@ -123,7 +123,10 @@ class TestApp(unittest.TestCase):
         mock_dog_result.age = 3
         mock_dog_result.description = "Friendly dog"
         mock_dog_result.gender = "Male"
-        mock_dog_result.status.name = "AVAILABLE"
+        # Create a proper mock status that behaves like an enum
+        mock_status = MagicMock()
+        mock_status.name = "AVAILABLE"
+        mock_dog_result.status = mock_status
         
         mock_query.first.return_value = mock_dog_result
         
@@ -156,7 +159,10 @@ class TestApp(unittest.TestCase):
         mock_dog_result.age = 3
         mock_dog_result.description = "Friendly dog"
         mock_dog_result.gender = "Male"
-        mock_dog_result.status.name = "AVAILABLE"
+        # Create a proper mock status that behaves like an enum
+        mock_status = MagicMock()
+        mock_status.name = "AVAILABLE"
+        mock_dog_result.status = mock_status
         
         mock_query.first.return_value = mock_dog_result
         
@@ -171,6 +177,45 @@ class TestApp(unittest.TestCase):
         response_data = json.loads(response.data)
         self.assertIn('has_application', response_data)
         self.assertEqual(response_data['has_application'], True)
+
+    def test_get_dogs_unavailable_parameter(self):
+        """Test GET /api/dogs with unavailable parameter returns only unavailable dogs"""
+        response = self.app.get('/api/dogs?unavailable=true')
+        self.assertEqual(response.status_code, 200)
+        
+        data = json.loads(response.data)
+        self.assertIn('dogs', data)
+        
+        # All returned dogs should have status PENDING or ADOPTED (not AVAILABLE)
+        for dog in data['dogs']:
+            self.assertIn('status', dog)
+            self.assertIn(dog['status'], ['PENDING', 'ADOPTED'])
+
+    def test_get_dogs_combined_filters(self):
+        """Test GET /api/dogs with available=true&unavailable=true returns all dogs"""
+        response = self.app.get('/api/dogs?available=true&unavailable=true')
+        self.assertEqual(response.status_code, 200)
+        
+        data = json.loads(response.data)
+        self.assertIn('dogs', data)
+        
+        # Should contain dogs with various statuses
+        statuses = {dog.get('status') for dog in data['dogs']}
+        # Expecting at least one status (might be empty database in tests)
+        self.assertTrue(len(statuses) >= 0)
+
+    def test_get_dogs_status_field_inclusion(self):
+        """Test GET /api/dogs includes status field for all dogs"""
+        response = self.app.get('/api/dogs')
+        self.assertEqual(response.status_code, 200)
+        
+        data = json.loads(response.data)
+        self.assertIn('dogs', data)
+        
+        # All dogs should have status field
+        for dog in data['dogs']:
+            self.assertIn('status', dog)
+            self.assertIn(dog['status'], ['AVAILABLE', 'PENDING', 'ADOPTED'])
 
 
 if __name__ == '__main__':

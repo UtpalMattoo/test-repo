@@ -23,7 +23,8 @@ def get_dogs() -> Response:
     per_page: int = min(50, int(request.args.get('per_page', 12)))
     breed_id: Optional[str] = request.args.get('breed_id')
     available: Optional[str] = request.args.get('available')
-
+    unavailable: Optional[str] = request.args.get('unavailable')
+    
     # Build the base query
     query = db.session.query(
         Dog.id, 
@@ -47,8 +48,17 @@ def get_dogs() -> Response:
             query = query.filter(Dog.breed_id == breed_id_int)
         except ValueError:
             pass
-    if available == 'true':
+    # Apply availability filtering with combined logic
+    if available == 'true' and unavailable == 'true':
+        # Both checked - show all dogs (no status filter)
+        pass
+    elif available == 'true' and unavailable != 'true':
+        # Available only (existing behavior)
         query = query.filter(Dog.status == 'AVAILABLE')
+    elif unavailable == 'true' and available != 'true':
+        # Unavailable only (new functionality)
+        query = query.filter(Dog.status != 'AVAILABLE')
+    # else: neither checked - show all dogs (default behavior)
     
     # Add this line before pagination:
     query = query.order_by(Dog.name)
@@ -61,7 +71,8 @@ def get_dogs() -> Response:
         {
             'id': dog.id,
             'name': dog.name,
-            'breed': dog.breed
+            'breed': dog.breed,
+            'status': dog.status.name if hasattr(dog.status, 'name') else str(dog.status)
         }
         for dog in paginated_dogs.items
     ]
@@ -101,7 +112,7 @@ def get_dog(id: int) -> tuple[Response, int] | Response:
         'age': dog_query.age,
         'description': dog_query.description,
         'gender': dog_query.gender,
-        'status': dog_query.status.name,
+        'status': dog_query.status.name if hasattr(dog_query.status, 'name') else str(dog_query.status),
         'has_application': has_application
     }
     
@@ -196,6 +207,28 @@ def get_applications() -> Response:
 def index() -> str:
     return "Welcome to the Dog Shelter API! Use /api/dogs and /api/breeds to access data."
 
+# add a new endpoint to list all un-available dogs
+@app.route('/api/dogs/unavailable', methods=['GET'])
+def get_unavailable_dogs() -> Response:
+    """Get all dogs that are not available for adoption."""
+    unavailable_dogs = db.session.query(
+        Dog.id, 
+        Dog.name, 
+        Breed.name.label('breed'),
+        Dog.status
+    ).join(Breed, Dog.breed_id == Breed.id).filter(Dog.status != 'AVAILABLE').order_by(Dog.name).all()
+    
+    dogs_list: List[Dict[str, Any]] = [
+        {
+            'id': dog.id,
+            'name': dog.name,
+            'breed': dog.breed,
+            'status': dog.status.name if hasattr(dog.status, 'name') else str(dog.status)
+        }
+        for dog in unavailable_dogs
+    ]
+    
+    return jsonify(dogs_list)
 
 if __name__ == '__main__':
     app.run(debug=True, port=5100) # Port 5100 to avoid macOS conflicts

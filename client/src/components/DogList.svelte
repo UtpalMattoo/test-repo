@@ -6,6 +6,7 @@
         id: number;
         name: string;
         breed: string;
+        status?: 'AVAILABLE' | 'PENDING' | 'ADOPTED';  // NEW - optional status field
     }
 
     interface DogResponse {
@@ -20,6 +21,42 @@
         name: string;
     }
 
+    // NEW - Helper function for status badge display
+    const getStatusBadge = (dog: Dog): { text: string; class: string } => {
+        if (!dog.status) return { text: 'AVAILABLE', class: 'bg-green-600' };
+        
+        switch (dog.status) {
+            case 'AVAILABLE':
+                return { text: 'AVAILABLE', class: 'bg-green-600' };
+            case 'PENDING':
+                return { text: 'PENDING', class: 'bg-yellow-600' };
+            case 'ADOPTED':
+                return { text: 'ADOPTED', class: 'bg-gray-600' };
+            default:
+                return { text: 'AVAILABLE', class: 'bg-green-600' };
+        }
+    };
+
+    // NEW - Helper function for context-aware empty state messages
+    const getEmptyStateMessage = (availableOnly: boolean, showUnavailable: boolean, searchTerm: string) => {
+        if (availableOnly && !showUnavailable) {
+            return {
+                title: "No available dogs found",
+                subtitle: searchTerm ? "Try adjusting your search" : 'Check "Show unavailable dogs" to see all dogs'
+            };
+        }
+        if (showUnavailable && !availableOnly) {
+            return {
+                title: "No unavailable dogs found", 
+                subtitle: "All dogs are currently available for adoption!"
+            };
+        }
+        return {
+            title: "No dogs found",
+            subtitle: searchTerm ? "Try adjusting your search terms" : "No dogs match your current filters"
+        };
+    };
+
     export let dogs: Dog[] = [];
     let loading = true;
     let error: string | null = null;
@@ -32,7 +69,8 @@
     let breeds: Breed[] = [];
     let selectedBreedId: string = '';
     // Availability checkbox state
-    let availableOnly: boolean = false;
+    let availableOnly: boolean = true;   // Default: show available dogs (backward compatibility)
+    let showUnavailable: boolean = false;  // NEW - controls unavailable checkbox
 
     // Load persisted filter state
     onMount(() => {
@@ -42,6 +80,9 @@
         if (savedBreed) selectedBreedId = savedBreed;
         const savedAvailable = localStorage.getItem('dogAvailableOnly');
         if (savedAvailable) availableOnly = savedAvailable === 'true';
+        
+        const savedUnavailable = localStorage.getItem('dogShowUnavailable');
+        if (savedUnavailable) showUnavailable = savedUnavailable === 'true';
 
         fetchBreeds();
         fetchDogs();
@@ -61,12 +102,14 @@
         localStorage.setItem('dogSearchTerm', searchTerm);
         localStorage.setItem('dogSelectedBreedId', selectedBreedId);
         localStorage.setItem('dogAvailableOnly', availableOnly ? 'true' : 'false');
+        localStorage.setItem('dogShowUnavailable', showUnavailable ? 'true' : 'false');
         await fetchDogs();
     }, 300);
 
     $: searchTerm, debouncedSearch();
     $: selectedBreedId, debouncedSearch();
     $: availableOnly, debouncedSearch();
+    $: showUnavailable, debouncedSearch();
 
     const fetchDogs = async () => {
         loading = true;
@@ -78,6 +121,7 @@
             });
             if (selectedBreedId) params.append('breed_id', selectedBreedId);
             if (availableOnly) params.append('available', 'true');
+            if (showUnavailable) params.append('unavailable', 'true');
 
             const response = await fetch(`/api/dogs?${params}`);
             if(response.ok) {
@@ -146,6 +190,17 @@
             />
             <label for="availableOnly" class="text-slate-300">Show only available dogs</label>
         </div>
+        
+        <!-- NEW - Unavailable checkbox -->
+        <div class="flex items-center mb-2">
+            <input
+                type="checkbox"
+                bind:checked={showUnavailable}
+                id="showUnavailable"
+                class="mr-2 accent-blue-500"
+            />
+            <label for="showUnavailable" class="text-slate-300">Show unavailable dogs</label>
+        </div>
     </div>
 
     {#if loading}
@@ -170,8 +225,10 @@
         </div>
     {:else if dogs.length === 0}
         <!-- no dogs found -->
+        {@const emptyMessage = getEmptyStateMessage(availableOnly, showUnavailable, searchTerm)}
         <div class="text-center py-12 bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700">
-            <p class="text-slate-300">No dogs available at the moment.</p>
+            <p class="text-lg mb-2 text-slate-300">{emptyMessage.title}</p>
+            <p class="text-sm text-slate-400">{emptyMessage.subtitle}</p>
         </div>
     {:else}
         <!-- dog list -->
@@ -186,6 +243,18 @@
                         <div class="relative z-10">
                             <h3 class="text-xl font-semibold text-slate-100 mb-2 group-hover:text-blue-400 transition-colors">{dog.name}</h3>
                             <p class="text-slate-400 mb-4">{dog.breed}</p>
+                            
+                            <!-- NEW - Status badge -->
+                            {#if dog.status}
+                                {@const badge = getStatusBadge(dog)}
+                                <span class="inline-block px-2 py-1 text-xs font-semibold text-white rounded-full {badge.class} mb-4">
+                                    {badge.text}
+                                </span>
+                            {:else}
+                                <span class="inline-block px-2 py-1 text-xs font-semibold text-white rounded-full bg-green-600 mb-4">
+                                    AVAILABLE
+                                </span>
+                            {/if}
                             <div class="mt-4 text-sm text-blue-400 font-medium flex items-center">
                                 <span>View details</span>
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1 transform transition-transform duration-300 group-hover:translate-x-2" viewBox="0 0 20 20" fill="currentColor">

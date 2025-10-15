@@ -33,10 +33,10 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'cd .. && ./scripts/start-app.sh',
-    url: 'http://localhost:4321',
-    reuseExistingServer: !process.env.CI,
+  /* webServer: {
+    command: 'npm run dev',
+    url: 'http://localhost:4322',
+    reuseExistingServer: true,
     timeout: 120 * 1000,
-  },
+  }, */
 });
